@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<title>Document Search</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<head>
+<script src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+<script type="text/javascript">
+pathArray = window.location.href.split( '/' );
+protocol = pathArray[0];
+host = pathArray[2];
+url = protocol + '//' + host;
+function search(){
+var resStr = "<p>RESULTS</p>";
+$('#resultsDiv').empty();
+var keyword 	= $('#searchField').val();
+var surl	= url+"/_fti/local/docs/_design/lucene/documents?q=docInfo:"+keyword+"* OR docTitle:"+keyword+"* OR file:"+keyword+"* &force_json=true";
+var results	=$.ajax(
+	{
+		url:surl,
+		success:function(data){
+			if(data.rows<=0){alert("No results.");return;}
+			//console.log(data.rows);
+			$.each(
+				data.rows,function(){
+				console.log(this);
+				docURL=url+"/docs/"+this.id+"/"+this.fields.docName;
+				updURL=url+"/test/formTest/docsUpdate.html?id="+this.id;
+				updSTR=" (<a href='"+updURL+"'>update</a>) ";
+				resStr = resStr + "<dt><a href='"+docURL+"' target='_blank'>"+this.fields.docTitle+"</a><dd>"+this.fields.docInfo+updSTR+"</dd>"+"</dt>";
+				}
+			);
+			//console.log(resStr);
+			$('#resultsDiv').append(resStr);
+		}
+	}
+);
+}
+</script>
+</head>
+<body>
+<div align="center">
+<a href="/test/formTest/docsForm.html">add</a> || <a href="/test/formTest/docSearch.html">search</a>
+</div>
+<div id="searchFormDiv">
+	<input name="searchField" id="searchField" placeholder="keyword search" type="text"><input id="searchButton" value="search" type="button" onClick="search();">
+</div>
+<div id="resultsDiv"></div>
+</body>
+</html>
