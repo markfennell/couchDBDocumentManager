@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>Document Update</title>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" > 
+</head>
+<script src="/_utils/script/json2.js"></script>
+<script src="/_utils/script/jquery.js?1.2.6"></script>
+<script src="/_utils/script/jquery.couch.js?0.8.0"></script>
+<script src="/_utils/script/jquery.form.js?0.9.0"></script>
+<style>input[type="text"] { width: 20em; }</style>
+<body>
+<div align="center">
+<a href="/test/formTest/docsForm.html">add</a> || <a href="/test/formTest/docSearch.html">search</a>
+</div>
+<form method="post" id="form" name="form" action="" enctype="multipart/form-data">
+<input type="text" name="_id" id="_id" placeholder="Document ID" />
+<br />
+<input type="text" name="_rev" id="_rev" placeholder="Revision ID (always overridden in code)" />
+<br />
+Title: <input type="text" name="docTitle" id="docTitle" placeholder="Document Title" />
+<br />
+Info: <input type="text" name="docInfo" id="docInfo" placeholder="Document Info" />
+<br />
+<input type="file" name="_attachments" id="_attachments" multiple="multiple" />
+<br />
+If you do not upload a new file, the current file will remain in place.
+<br />
+If you upload a new file, the current file will be replaced.
+<br />
+<input type="submit" class="Submit" value="Submit" id="submitButton" />
+<input type="button" value="Delete" id="deleteButton" />
+</form>
+<div id="result"></div>
+</body>
+<script>
+var att = {};
+var vars = [], hash;
+var q = document.URL.split('?')[1];
+if(q != undefined){
+	q = q.split('&');
+	for(var i = 0; i < q.length; i++){
+	    hash = q[i].split('=');
+	    vars.push(hash[1]);
+	    vars[hash[0]] = hash[1];
+	}
+}
+function updateForm() {
+$.ajax({
+url:"/docs/"+vars.id,  
+success: function(data){
+	var d = JSON.parse(data);
+	$('#_id').val(d._id);
+	$('#_rev').val(d._rev);
+	att=d._attachments;
+	$('#docTitle').val(d.docTitle);
+	$('#docInfo').val(d.docInfo);},		
+error: function(err){ alert("Document not available for update."); console.log(err); } 
+});
+}
+
+$(function() {
+    $('form').submit(function(e) {
+	e.preventDefault();
+if($('#_attachments').val()){
+var updDoc = {"_id":$('#_id').val(),"_rev":$('#_rev').val(),"docTitle":$('#docTitle').val(),"docInfo":$('#docInfo').val()};
+} else {
+var updDoc = {"_id":$('#_id').val(),"_rev":$('#_rev').val(),"docTitle":$('#docTitle').val(),"docInfo":$('#docInfo').val(),"_attachments":att};
+}
+$.couch.db("docs").saveDoc( updDoc, {
+	success: function(data) { 
+		//console.log(data);	
+		$('#_rev').val(data.rev);
+		if($('#_attachments').val()){
+		//console.log("ATT",$('#_attachments').val());
+			$('#form').ajaxSubmit({
+			url: "/docs/"+$('#_id').val() ,
+			success: function(response) {$('#result').append("<br />SUCCESS: "+response); updateForm();},
+			error: function(status) {$('#result').append("<br />ERROR: "+status);}
+			});
+		}
+		},
+	error: function(status) {
+        	$('#result').append("<br />ERROR: "+status);
+        	$('#result').append("<br />ERROR: "+doc);
+	    }
+		});
+});
+});
+updateForm();
+$('#deleteButton').click(
+	function(){
+	var delDoc = {"_id":$('#_id').val(),"_rev":$('#_rev').val()};
+	$.couch.db("docs").removeDoc( delDoc, { 
+		success: function(data){
+			$('form').remove();
+			$('#result').append("<br />SUCCESS: Document deleted!");
+			//alert("Document deleted!");
+			console.log(data);
+		},
+		error: function(err){
+			alert("Document NOT deleted.");
+			console.log(err);
+		}
+	});
+		
+	}
+);
+</script>
+</html>
