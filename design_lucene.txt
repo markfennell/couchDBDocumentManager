@@ -1,0 +1,9 @@
+{
+   "_id": "_design/lucene",
+   "_rev": "9-c59f06056fef8eaf080999bf0db326b1",
+   "fulltext": {
+       "documents": {
+           "index": "function(doc) {var ret = new Document();ret.add(doc._rev,{'field':'docRev', 'store':'yes'});ret.add(doc.docTitle,{'field':'docTitle', 'store':'yes'});ret.add(doc.docInfo,{'field':'docInfo', 'store':'yes'});for(var a in doc._attachments) {ret.attachment('file', a);ret.add(a,{'field':'docName', 'store':'yes'});}return ret;}"
+       }
+   }
+}
