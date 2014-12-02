@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>Document Uploader</title>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" >
+<!-- jQuery assets -->
+<script src="/_utils/script/json2.js"></script>
+<script src="/_utils/script/jquery.js?1.2.6"></script>
+<script src="/_utils/script/jquery.couch.js?0.8.0"></script>
+<script src="/_utils/script/jquery.form.js?0.9.0"></script>
+<script type="text/javascript">
+$.fn.serializeObject = function()
+{
+	var o = {};
+	var a = this.serializeArray();
+	$.each(a, function() {
+        if (o[this.name] !== undefined) {
+            if (!o[this.name].push) {
+                o[this.name] = [o[this.name]];
+            }
+            o[this.name].push(this.value || '');
+        } else {
+            o[this.name] = this.value || '';
+        }
+    });
+    return o;
+};
+
+$(function() {
+    $('form').submit(function(e) {
+	e.preventDefault();
+    $.couch.db("docs").saveDoc({}, {
+    success: function(data) {
+	$('#_id').val(data.id);
+	$('#_rev').val(data.rev);
+	console.log(data.id);
+	var doc=JSON.stringify($('form').serializeObject());
+	$.couch.db("docs").saveDoc( JSON.parse(doc) , {
+	    success: function(udata) { 
+		console.log(udata);	
+		$('#_rev').val(udata.rev);
+			$('#form').ajaxSubmit({
+			url: "/docs/"+$('#_id').val() ,
+			success: function(response) {$('#result').append("<br />SUCCESS: "+response);},
+			error: function(status) {$('#result').append("<br />ERROR: "+status);}
+			});
+		},
+	    error: function(status) {
+        	$('#result').append("<br />ERROR: "+status);
+        	$('#result').append("<br />ERROR: "+doc);
+	    }
+		});
+    },
+    error: function(status) {
+        $('#result').append("<br /> ERROR: "+status);
+    }
+});
+
+    });
+});
+
+</script>
+<body>
+<div align="center">
+<a href="/test/formTest/docsForm.html">add</a> || <a href="/test/formTest/docSearch.html">search</a>
+</div>
+<form method="post" id="form" name="form" action="" enctype="multipart/form-data">
+<input type="text" name="_id" id="_id" placeholder="Document ID" />
+<br />
+<input type="text" name="_rev" id="_rev" placeholder="Revision ID (always overridden in code)" />
+<br />
+<input type="text" name="docTitle" id="docTitle" placeholder="Document Title" />
+<br />
+<input type="text" name="docInfo" id="docInfo" placeholder="Document Info" />
+<br />
+
+
+
+<input type="file" name="_attachments" id="_attachments" multiple="multiple" />
+<br />
+<input type="submit" class="Submit" value="Submit" />
+<input type="reset" class="Reset" value="Reset" />
+</form>
+<div id="result"></div>
+</body>
+</html>
